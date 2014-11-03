@@ -8,7 +8,7 @@ environment variables, evaluated in that order.
 
 ## Usage
 
-```
+```go
 import "github.com/cpliakas/gofigure"
 ```
 

@@ -1,8 +1,9 @@
 # gofigure
 
-A configuration utility for Go insipred by [The Twelve-Factor App](http://12factor.net/config).
+A configuration utility for Go inspired by [The Twelve-Factor App](http://12factor.net/config) methodology.
 
-Configuration options are defined in command line arguments and
+
+Configuration options are defined via command line arguments and
 environment variables, evaluated in that order.
 
 ## Usage
@@ -13,7 +14,7 @@ import "github.com/cpliakas/gofigure"
 
 ```go
 config := gofigure.New()
-config.envPrefix = "MYAPP_"
+config.EnvPrefix = "MYAPP_"
 
 config.Add("my-opt").
 	EnvVar("MY_OPT").

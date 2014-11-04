@@ -85,7 +85,7 @@ func (c *Config) Parse() {
 	})
 }
 
-// Options contains the details of a configuration options,
+// Option contains the details of a configuration options,
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {

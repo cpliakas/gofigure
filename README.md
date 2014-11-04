@@ -24,7 +24,7 @@ config.Parse()
 fmt.Println(*config.Get("listen"))
 ```
 
-The following commands set value of the `listen` flag to `:3001`:
+The following commands set the value of the `listen` flag to `:3001`:
 
 ```
 ./myapp --listen=:3001

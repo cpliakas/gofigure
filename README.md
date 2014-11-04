@@ -1,10 +1,8 @@
 # gofigure
 
-A configuration utility for Go inspired by [The Twelve-Factor App](http://12factor.net/config) methodology.
-
-
-Configuration options are defined via command line arguments and
-environment variables, evaluated in that order.
+A configuration utility for Go inspired by [The Twelve-Factor App](http://12factor.net/config)
+methodology that allows configuration options to be set via command
+line flags and environment variables.
 
 ## Usage
 
@@ -40,4 +38,3 @@ I am new to Go, the best way to learn a language is to create a
 project and expose it to the world for feedback. For a full-featured
 configuration utility written by a more competent Gopher, check out
 the [globalconf](https://github.com/rakyll/globalconf) project.
-

@@ -71,6 +71,11 @@ func (c *Config) Parse() {
 			return
 		}
 
+		// Skip flags that aren't added to Config.
+		if _, isset := c.options[f.Name]; !isset {
+			return
+		}
+
 		// Some options shouldn't be set via environment variables.
 		if c.options[f.Name].envVar == "" {
 			return

@@ -1,5 +1,6 @@
 # gofigure
 
+[![Build Status](https://travis-ci.org/cpliakas/gofigure.svg)](https://travis-ci.org/cpliakas/gofigure)
 [![GoDoc](https://godoc.org/github.com/cpliakas/gofigure?status.svg)](https://godoc.org/github.com/cpliakas/gofigure)
 
 A configuration utility for Go inspired by [The Twelve-Factor App](http://12factor.net/config)

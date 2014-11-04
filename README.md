@@ -16,13 +16,22 @@ import "github.com/cpliakas/gofigure"
 config := gofigure.New()
 config.EnvPrefix = "MYAPP_"
 
-config.Add("my-opt").
-	EnvVar("MY_OPT").
-	Default("default value").
-	Description("The my-opt flag can be set in the MYAPP_MY_OPT env variable")
+config.Add("listen").
+	EnvVar("LISTEN").
+	Default(":3000").
+	Description("The address to listen on.")
 
 config.Parse()
 
+fmt.Println(*config.Get("listen"))
+```
+
+The following commands set value of the `listen` flag to `:3001`:
+
+```
+./myapp --listen=:3001
+MYAPP_LISTEN=:3001 ./myapp
+MYAPP_LISTEN=:3002 ./myapp --listen=:3001
 ```
 
 ## Disclaimer

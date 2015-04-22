@@ -8,11 +8,11 @@ import (
 // Config contains the configuration options that may be set by
 // command line flags and environment variables.
 type Config struct {
-	Description string
-	Version     string
-	EnvPrefix   string
-	options     map[string]*Option
-	flags       map[string]*string
+	Description	string
+	Version		string
+	EnvPrefix	string
+	options		map[string]*Option
+	flags		map[string]*string
 	values		map[string]string
 }
 

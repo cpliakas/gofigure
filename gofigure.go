@@ -1,27 +1,27 @@
 package gofigure
 
 import (
-	"flag"
+	"github.com/droundy/goopt"
 	"os"
 )
-
-// Pointer to the default set of command line flags.
-var set *flag.FlagSet
 
 // Config contains the configuration options that may be set by
 // command line flags and environment variables.
 type Config struct {
-	EnvPrefix string
-	options   map[string]*Option
-	values    map[string]*string
+	Description string
+	Version     string
+	EnvPrefix   string
+	options     map[string]*Option
+	flags       map[string]*string
+	values		map[string]string
 }
 
 // Returns a new Config instance.
 func New() *Config {
-	set = flag.CommandLine
 	return &Config{
 		options: make(map[string]*Option),
-		values:  make(map[string]*string),
+		flags:  make(map[string]*string),
+		values: make(map[string]string),
 	}
 }
 
@@ -38,7 +38,7 @@ func (c *Config) Add(name string) *Option {
 }
 
 // Returns a configuration option by flag name.
-func (c *Config) Get(name string) *string {
+func (c *Config) Get(name string) string {
 	return c.values[name]
 }
 
@@ -49,45 +49,49 @@ func (c *Config) Get(name string) *string {
 //
 // See https://github.com/rakyll/globalconf/blob/master/globalconf.go
 func (c *Config) Parse() {
+	goopt.Description = func() string {
+		return c.Description 
+	}
+
+	goopt.Version = c.Version
 
 	// Sets the flags from the configuration options.
 	for name, o := range c.options {
-		c.values[name] = flag.String(name, o.def, o.desc)
+		c.flags[name] = goopt.String([]string{"--"+name}, "", o.desc)
+		c.values[name] = o.def
 	}
 
-	flag.Parse()
+	goopt.Parse(nil)
 
 	// Gather the flags passed through command line.
 	passed := make(map[string]bool)
-	set.Visit(func(f *flag.Flag) {
-		passed[f.Name] = true
-	})
+	for name, f := range c.flags {
+		if *f != "" {
+			passed[name] = true
+			c.values[name] = *f
+		}
+	}
 
-	set.VisitAll(func(f *flag.Flag) {
+	for name, f := range c.options {
 
 		// Skip flags passed through the command line as the option is
 		// already set and takes precedence over environment variables.
-		if passed[f.Name] {
-			return
-		}
-
-		// Skip flags that aren't added to Config.
-		if _, isset := c.options[f.Name]; !isset {
+		if passed[name] {
 			return
 		}
 
 		// Some options shouldn't be set via environment variables.
-		if c.options[f.Name].envVar == "" {
+		if f.envVar == "" {
 			return
 		}
 
 		// If the configuration option was not passed via the command line,
 		// check the corresponding environment variable.
-		envVar := c.EnvPrefix + c.options[f.Name].envVar
+		envVar := c.EnvPrefix + f.envVar
 		if val := os.Getenv(envVar); val != "" {
-			set.Set(f.Name, val)
+			c.values[name] = val
 		}
-	})
+	}
 }
 
 // Option contains the details of a configuration options,

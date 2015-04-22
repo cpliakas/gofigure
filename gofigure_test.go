@@ -17,7 +17,7 @@ func TestParse(t *testing.T) {
 
 	config.Parse()
 
-	listen := *config.Get("listen")
+	listen := config.Get("listen")
 	if listen != ":3001" {
 		t.Errorf("Flag 'listen' found %v, expected :3001", listen)
 	}

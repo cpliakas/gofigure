@@ -30,6 +30,7 @@ func New() *Config {
 // value, and description.
 func (c *Config) Add(name string) *Option {
 	c.options[name] = &Option{
+		name:   name,
 		envVar: "",
 		def:    "",
 		desc:   "",
@@ -98,7 +99,12 @@ func (c *Config) Parse() {
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
-	envVar, def, desc string
+	name, envVar, def, desc string
+	fileSpec				string              // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
+}
+
+func (o Option) Name() string {
+	return o.name
 }
 
 // Sets the configuration option's default value.

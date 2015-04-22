@@ -8,20 +8,22 @@ import (
 // Config contains the configuration options that may be set by
 // command line flags and environment variables.
 type Config struct {
-	Description	string
-	Version		string
-	EnvPrefix	string
-	options		map[string]*Option
-	flags		map[string]*string
-	values		map[string]string
+	Description			string
+	DisableCommandLine	bool
+	Version				string
+	EnvPrefix			string
+	options				map[string]*Option
+	flags				map[string]*string
+	values				map[string]string
 }
 
 // Returns a new Config instance.
 func New() *Config {
 	return &Config{
-		options: make(map[string]*Option),
-		flags:  make(map[string]*string),
-		values: make(map[string]string),
+		DisableCommandLine:	false,
+		options:			make(map[string]*Option),
+		flags:				make(map[string]*string),
+		values:				make(map[string]string),
 	}
 }
 
@@ -57,18 +59,26 @@ func (c *Config) Parse() {
 
 	// Sets the flags from the configuration options.
 	for name, o := range c.options {
-		c.flags[name] = goopt.String([]string{"--"+name}, "", o.desc)
+		cmdline := []string{}
+		if o.shortOpt != "" {
+			cmdline = append(cmdline, "-" + o.shortOpt)
+		}
+		cmdline = append(cmdline, "--"+name)
+		c.flags[name] = goopt.String(cmdline, "", o.desc)
 		c.values[name] = o.def
 	}
 
-	goopt.Parse(nil)
-
-	// Gather the flags passed through command line.
 	passed := make(map[string]bool)
-	for name, f := range c.flags {
-		if *f != "" {
-			passed[name] = true
-			c.values[name] = *f
+
+	if !c.DisableCommandLine {
+		goopt.Parse(nil)
+
+		// Gather the options passed through command line.
+		for name, f := range c.flags {
+			if *f != "" {
+				passed[name] = true
+				c.values[name] = *f
+			}
 		}
 	}
 
@@ -98,7 +108,12 @@ func (c *Config) Parse() {
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
-	envVar, def, desc string
+	envVar, shortOpt, def, desc string
+}
+
+func (o *Option) ShortOpt(opt string) *Option {
+	o.shortOpt = opt
+	return o
 }
 
 // Sets the configuration option's default value.

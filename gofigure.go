@@ -88,12 +88,12 @@ func (c *Config) Parse() {
 		// Skip flags passed through the command line as the option is
 		// already set and takes precedence over environment variables.
 		if passed[name] {
-			return
+			continue
 		}
 
 		// Some options shouldn't be set via environment variables.
 		if f.envVar == "" {
-			return
+			continue
 		}
 
 		// If the configuration option was not passed via the command line,

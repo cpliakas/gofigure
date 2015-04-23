@@ -14,7 +14,7 @@ type Config struct {
 	EnvPrefix			string
 	options				map[string]*Option
 	flags				map[string]*string
-	values				map[string]string
+	values				map[string]*string
 }
 
 // Returns a new Config instance.
@@ -23,7 +23,7 @@ func New() *Config {
 		DisableCommandLine:	false,
 		options:			make(map[string]*Option),
 		flags:				make(map[string]*string),
-		values:				make(map[string]string),
+		values:				make(map[string]*string),
 	}
 }
 
@@ -40,7 +40,7 @@ func (c *Config) Add(name string) *Option {
 }
 
 // Returns a configuration option by flag name.
-func (c *Config) Get(name string) string {
+func (c *Config) Get(name string) *string {
 	return c.values[name]
 }
 
@@ -65,7 +65,8 @@ func (c *Config) Parse() {
 		}
 		cmdline = append(cmdline, "--"+name)
 		c.flags[name] = goopt.String(cmdline, "", o.desc)
-		c.values[name] = o.def
+		defcopy := o.def
+		c.values[name] = &defcopy
 	}
 
 	passed := make(map[string]bool)
@@ -77,7 +78,7 @@ func (c *Config) Parse() {
 		for name, f := range c.flags {
 			if *f != "" {
 				passed[name] = true
-				c.values[name] = *f
+				*c.values[name] = *f
 			}
 		}
 	}
@@ -99,7 +100,7 @@ func (c *Config) Parse() {
 		// check the corresponding environment variable.
 		envVar := c.EnvPrefix + f.envVar
 		if val := os.Getenv(envVar); val != "" {
-			c.values[name] = val
+			*c.values[name] = val
 		}
 	}
 }

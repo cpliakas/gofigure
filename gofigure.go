@@ -10,8 +10,11 @@ import (
 type Config struct {
 	Description			string
 	DisableCommandLine	bool
-	Version				string
 	EnvPrefix			string
+	EnvOverridesFile	bool
+	Filename			string
+	FileParser			File
+	Version				string
 	options				map[string]*Option
 	flags				map[string]*string
 	values				map[string]*string
@@ -21,6 +24,7 @@ type Config struct {
 func New() *Config {
 	return &Config{
 		DisableCommandLine:	false,
+		EnvOverridesFile:   false,
 		options:			make(map[string]*Option),
 		flags:				make(map[string]*string),
 		values:				make(map[string]*string),
@@ -84,6 +88,16 @@ func (c *Config) Parse() {
 		}
 	}
 
+	if (c.EnvOverridesFile) {
+		c.ParseEnv(passed)
+		c.ParseFile(passed)
+	} else {
+		c.ParseFile(passed)
+		c.ParseEnv(passed)
+	}
+}
+
+func (c *Config) ParseEnv(passed map[string]bool) {
 	for name, f := range c.options {
 
 		// Skip flags passed through the command line as the option is
@@ -102,8 +116,42 @@ func (c *Config) Parse() {
 		envVar := c.EnvPrefix + f.envVar
 		if val := os.Getenv(envVar); val != "" {
 			*c.values[name] = val
+			passed[name] = true
 		}
 	}
+}
+
+func (c Config) parseFileToMap(name string, handler File) (ValueMap, error) {
+	root, err := handler.Parse(name)
+	if err != nil {
+		return nil, err
+	}
+	ret := ValueMap{}
+	for _, opt := range c.options {
+		if val, ok := root.FindOption(opt); ok {
+			ret.Set(opt.Name(), val)
+		}
+	}
+	return ret, nil
+}
+
+func (c *Config) ParseFile(passed map[string]bool) error {
+	if (c.FileParser == nil || c.Filename == "") {
+		return nil
+	}
+
+	values, err := c.parseFileToMap(c.Filename, c.FileParser)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range values {
+		if p, ok := c.values[k]; ok {
+			*p = v
+			passed[k] = true
+		}
+	}
+	return nil
 }
 
 // Option contains the details of a configuration options,

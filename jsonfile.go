@@ -59,17 +59,3 @@ func (j JsonFile) Parse(name string) (*Category, error) {
 
 	return root, nil
 }
-
-func (j JsonFile) ParseConfig(name string, specs map[string]*Option) (ValueMap, error) {
-	root, err := j.Parse(name)
-	if err != nil {
-		return nil, err
-	}
-	ret := ValueMap{}
-	for _, opt := range specs {
-		if val, ok := root.FindOption(opt); ok {
-			ret.Set(opt.Name(), val)
-		}
-	}
-	return ret, nil
-}

@@ -110,5 +110,4 @@ func (c ValueMap) Delete(key string) {
 
 type File interface {
 	Parse(name string) (*Category, error)
-	ParseConfig(name string, specs map[string]*Option) (ValueMap, error)
 }

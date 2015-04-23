@@ -2,6 +2,7 @@ package gofigure
 
 import (
 	"github.com/droundy/goopt"
+	"log"
 	"os"
 )
 
@@ -12,7 +13,6 @@ type Config struct {
 	DisableCommandLine	bool
 	EnvPrefix			string
 	EnvOverridesFile	bool
-	Filename			string
 	FileParser			File
 	Version				string
 	options				map[string]*Option
@@ -90,9 +90,15 @@ func (c *Config) Parse() {
 
 	if (c.EnvOverridesFile) {
 		c.ParseEnv(passed)
-		c.ParseFile(passed)
+		err := c.ParseFile(passed)
+		if err != nil {
+			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		}
 	} else {
-		c.ParseFile(passed)
+		err := c.ParseFile(passed)
+		if err != nil {
+			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		}
 		c.ParseEnv(passed)
 	}
 }
@@ -103,12 +109,12 @@ func (c *Config) ParseEnv(passed map[string]bool) {
 		// Skip flags passed through the command line as the option is
 		// already set and takes precedence over environment variables.
 		if passed[name] {
-			return
+			continue
 		}
 
 		// Some options shouldn't be set via environment variables.
 		if f.envVar == "" {
-			return
+			continue
 		}
 
 		// If the configuration option was not passed via the command line,
@@ -121,8 +127,8 @@ func (c *Config) ParseEnv(passed map[string]bool) {
 	}
 }
 
-func (c Config) parseFileToMap(name string, handler File) (ValueMap, error) {
-	root, err := handler.Parse(name)
+func (c Config) parseFileToMap(handler File) (ValueMap, error) {
+	root, err := handler.Parse()
 	if err != nil {
 		return nil, err
 	}
@@ -136,16 +142,20 @@ func (c Config) parseFileToMap(name string, handler File) (ValueMap, error) {
 }
 
 func (c *Config) ParseFile(passed map[string]bool) error {
-	if (c.FileParser == nil || c.Filename == "") {
+	if (c.FileParser == nil) {
 		return nil
 	}
 
-	values, err := c.parseFileToMap(c.Filename, c.FileParser)
+	values, err := c.parseFileToMap(c.FileParser)
 	if err != nil {
 		return err
 	}
 
 	for k, v := range values {
+		if passed[k] {
+			continue
+		}
+
 		if p, ok := c.values[k]; ok {
 			*p = v
 			passed[k] = true
@@ -164,6 +174,11 @@ type Option struct {
 
 func (o Option) Name() string {
 	return o.name
+}
+
+func (o *Option) FileSpec(spec string) *Option {
+	o.fileSpec = spec
+	return o
 }
 
 func (o *Option) ShortOpt(opt string) *Option {

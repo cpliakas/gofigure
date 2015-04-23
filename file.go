@@ -1,6 +1,7 @@
 package gofigure
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
@@ -30,6 +31,15 @@ func (c Category) FindOption(o *Option) (string, bool) {
 		return val, ok
 	}
 	return "", false
+}
+
+func (c Category) Print(indent string) {
+	fmt.Printf("%sCategories = [\n", indent)
+	c.Categories.Print(fmt.Sprintf("%s  ", indent))
+	fmt.Printf("%s]\n", indent)
+	fmt.Printf("%sValues = [\n", indent)
+	c.Values.Print(fmt.Sprintf("%s  ", indent))
+	fmt.Printf("%s]\n", indent)
 }
 
 func (c Category) Find(spec string) (string, bool) {
@@ -77,6 +87,14 @@ func (c CategoryMap) Delete(key string) {
 	delete(c, key)
 }
 
+func (c CategoryMap) Print(indent string) {
+	for k, v := range c {
+		fmt.Printf("%s%s: Category {\n", indent, k)
+		v.Print(fmt.Sprintf("%s  ", indent))
+		fmt.Printf("}\n")
+	}
+}
+
 func (c ValueMap) Exists(key string) bool {
 	if _, ok := c[key]; ok {
 		return true
@@ -107,7 +125,12 @@ func (c ValueMap) Delete(key string) {
 	delete(c, key)
 }
 
+func (c ValueMap) Print(indent string) {
+	for k, v := range c {
+		fmt.Printf("%s%s: %s\n", indent, k, v)
+	}
+}
 
 type File interface {
-	Parse(name string) (*Category, error)
+	Parse() (*Category, error)
 }

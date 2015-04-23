@@ -2,11 +2,20 @@ package gofigure
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strconv"
 )
 
-type JsonFile struct {}
+type JsonFile struct {
+	Filename string
+}
+
+func NewJsonFile(name string) *JsonFile {
+	return &JsonFile {
+		Filename: name,
+	}
+}
 
 func (j JsonFile) ProcessLayer(layer map[string]interface{}, name string, parent *Category) (*Category, error) {
 	current := NewCategory(name, parent)
@@ -30,7 +39,7 @@ func (j JsonFile) ProcessLayer(layer map[string]interface{}, name string, parent
 		case map[string]interface{}:
 			c, err := j.ProcessLayer(v.(map[string]interface{}), k, current)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("JsonFile.ProcessLayer: %s", err.Error())
 			}
 			current.Categories.Set(k, c)
 		// According to the json specs, this should only be 'null'.
@@ -41,20 +50,20 @@ func (j JsonFile) ProcessLayer(layer map[string]interface{}, name string, parent
 	return current, nil
 }
 
-func (j JsonFile) Parse(name string) (*Category, error) {
+func (j JsonFile) Parse() (*Category, error) {
 	data := map[string]interface{}{}
-	bytes, err := ioutil.ReadFile(name)
+	bytes, err := ioutil.ReadFile(j.Filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("JsonFile.Parse: Readfile failed - %s", err.Error())
 	}
-	err = json.Unmarshal(bytes, data)
+	err = json.Unmarshal(bytes, &data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("JsonFile.Parse: Unmarshal failed - %s", err.Error())
 	}
 
 	root, err := j.ProcessLayer(data, "/", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("JsonFile.Parse: ProcessLayer failed - %s", err.Error())
 	}
 
 	return root, nil

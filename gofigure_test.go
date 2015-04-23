@@ -15,6 +15,7 @@ func TestParse(t *testing.T) {
 
 	config.Add("listen").EnvVar("LISTEN").Default(":3000")
 
+	config.DisableCommandLine = true
 	config.Parse()
 
 	listen := *config.Get("listen")

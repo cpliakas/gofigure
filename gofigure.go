@@ -5,6 +5,19 @@ import (
 	"os"
 )
 
+// This function is a convenience function. It displays the default values for us but handles them
+// in the way we prefer it.
+func GooptFigureString(names []string, def string, help string) *string {
+	s := new(string)
+	*s = ""
+	f := func (ss string) error {
+		*s = ss
+		return nil
+	}
+	goopt.ReqArg(names, def, help, f)
+	return s
+}
+
 // Config contains the configuration options that may be set by
 // command line flags and environment variables.
 type Config struct {

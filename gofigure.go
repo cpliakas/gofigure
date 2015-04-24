@@ -2,6 +2,7 @@ package gofigure
 
 import (
 	"github.com/droundy/goopt"
+	"log"
 	"os"
 )
 
@@ -23,8 +24,10 @@ func GooptFigureString(names []string, def string, help string) *string {
 type Config struct {
 	Description			string
 	DisableCommandLine	bool
-	Version				string
 	EnvPrefix			string
+	EnvOverridesFile	bool
+	FileParser			File
+	Version				string
 	options				map[string]*Option
 	flags				map[string]*string
 	values				map[string]*string
@@ -34,6 +37,7 @@ type Config struct {
 func New() *Config {
 	return &Config{
 		DisableCommandLine:	false,
+		EnvOverridesFile:   false,
 		options:			make(map[string]*Option),
 		flags:				make(map[string]*string),
 		values:				make(map[string]*string),
@@ -45,6 +49,7 @@ func New() *Config {
 // value, and description.
 func (c *Config) Add(name string) *Option {
 	c.options[name] = &Option{
+		name:   name,
 		envVar: "",
 		def:    "",
 		desc:   "",
@@ -96,6 +101,22 @@ func (c *Config) Parse() {
 		}
 	}
 
+	if (c.EnvOverridesFile) {
+		c.ParseEnv(passed)
+		err := c.ParseFile(passed)
+		if err != nil {
+			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		}
+	} else {
+		err := c.ParseFile(passed)
+		if err != nil {
+			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		}
+		c.ParseEnv(passed)
+	}
+}
+
+func (c *Config) ParseEnv(passed map[string]bool) {
 	for name, f := range c.options {
 
 		// Skip flags passed through the command line as the option is
@@ -114,15 +135,63 @@ func (c *Config) Parse() {
 		envVar := c.EnvPrefix + f.envVar
 		if val := os.Getenv(envVar); val != "" {
 			*c.values[name] = val
+			passed[name] = true
 		}
 	}
+}
+
+func (c Config) parseFileToMap(handler File) (ValueMap, error) {
+	root, err := handler.Parse()
+	if err != nil {
+		return nil, err
+	}
+	ret := ValueMap{}
+	for _, opt := range c.options {
+		if val, ok := root.FindOption(opt); ok {
+			ret.Set(opt.Name(), val)
+		}
+	}
+	return ret, nil
+}
+
+func (c *Config) ParseFile(passed map[string]bool) error {
+	if (c.FileParser == nil) {
+		return nil
+	}
+
+	values, err := c.parseFileToMap(c.FileParser)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range values {
+		if passed[k] {
+			continue
+		}
+
+		if p, ok := c.values[k]; ok {
+			*p = v
+			passed[k] = true
+		}
+	}
+	return nil
 }
 
 // Option contains the details of a configuration options,
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
-	envVar, shortOpt, def, desc string
+	name, envVar, shortOpt, def, desc string
+	fileSpec				string              // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
+}
+
+func (o Option) Name() string {
+	return o.name
+}
+
+func (o *Option) FileSpec(spec string) *Option {
+	o.fileSpec = spec
+	return o
 }
 
 func (o *Option) ShortOpt(opt string) *Option {

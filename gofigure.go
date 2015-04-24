@@ -77,7 +77,7 @@ func (c *Config) Parse() {
 			cmdline = append(cmdline, "-" + o.shortOpt)
 		}
 		cmdline = append(cmdline, "--"+name)
-		c.flags[name] = goopt.String(cmdline, "", o.desc)
+		c.flags[name] = GooptFigureString(cmdline, o.def, o.desc)
 		defcopy := o.def
 		c.values[name] = &defcopy
 	}

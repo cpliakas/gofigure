@@ -39,5 +39,6 @@ MYAPP_LISTEN=:3002 ./myapp --listen=:3001
 
 I am new to Go, the best way to learn a language is to create a
 project and expose it to the world for feedback. For a full-featured
-configuration utility written by a more competent Gopher, check out
-the [globalconf](https://github.com/rakyll/globalconf) project.
+configuration utility written by a more competent Gophers, check out
+the [globalconf](https://github.com/rakyll/globalconf) and
+[Viper](https://github.com/spf13/viper) projects.

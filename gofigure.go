@@ -58,7 +58,7 @@ func (c *Config) Add(name string) *Option {
 }
 
 // Returns a configuration option by flag name.
-func (c *Config) Get(name string) *string {
+func (c Config) Get(name string) *string {
 	return c.values[name]
 }
 

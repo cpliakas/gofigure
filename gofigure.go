@@ -1,6 +1,7 @@
 package gofigure
 
 import (
+	"fmt"
 	"github.com/droundy/goopt"
 	"log"
 	"os"
@@ -23,6 +24,7 @@ func GooptFigureString(names []string, def string, help string) *string {
 // command line flags and environment variables.
 type Config struct {
 	Description			string
+	DescribeEnvironment bool	// if true, the environment variable is automatically added to the flag description
 	DisableCommandLine	bool
 	EnvPrefix			string
 	EnvOverridesFile	bool
@@ -36,11 +38,12 @@ type Config struct {
 // Returns a new Config instance.
 func New() *Config {
 	return &Config{
-		DisableCommandLine:	false,
-		EnvOverridesFile:   false,
-		options:			make(map[string]*Option),
-		flags:				make(map[string]*string),
-		values:				make(map[string]*string),
+		DescribeEnvironment: false,
+		DisableCommandLine:	 false,
+		EnvOverridesFile:    false,
+		options:			 make(map[string]*Option),
+		flags:				 make(map[string]*string),
+		values:				 make(map[string]*string),
 	}
 }
 
@@ -83,7 +86,11 @@ func (c *Config) Parse() {
 			cmdline = append(cmdline, "-" + o.shortOpt)
 		}
 		cmdline = append(cmdline, "--"+o.longOpt)
-		c.flags[name] = GooptFigureString(cmdline, o.def, o.desc)
+		desc := o.desc
+		if c.DescribeEnvironment && o.envVar != "" {
+			desc += fmt.Sprintf(" Environment variable: %s_%s.", c.EnvPrefix, o.envVar)
+		}
+		c.flags[name] = GooptFigureString(cmdline, o.def, desc)
 		defcopy := o.def
 		c.values[name] = &defcopy
 	}

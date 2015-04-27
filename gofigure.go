@@ -29,6 +29,7 @@ type Config struct {
 	EnvPrefix			string
 	EnvOverridesFile	bool
 	FileParser			File
+	RequireFile			bool    // application will panic if RequireFile == true, FileParser != nil and file doesn't exist
 	Version				string
 	options				map[string]*Option
 	flags				map[string]*string
@@ -41,6 +42,7 @@ func New() *Config {
 		DescribeEnvironment: false,
 		DisableCommandLine:	 false,
 		EnvOverridesFile:    false,
+		RequireFile:         true,
 		options:			 make(map[string]*Option),
 		flags:				 make(map[string]*string),
 		values:				 make(map[string]*string),
@@ -112,13 +114,17 @@ func (c *Config) Parse() {
 	if (c.EnvOverridesFile) {
 		c.ParseEnv(passed)
 		err := c.ParseFile(passed)
-		if err != nil {
+		if err != nil && c.RequireFile {
 			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		} else if err != nil {
+			log.Printf("Could not parse file: %s", err.Error())
 		}
 	} else {
 		err := c.ParseFile(passed)
-		if err != nil {
+		if err != nil && c.RequireFile {
 			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		} else if err != nil {
+			log.Printf("Could not parse file: %s", err.Error())
 		}
 		c.ParseEnv(passed)
 	}

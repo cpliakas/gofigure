@@ -49,10 +49,11 @@ func New() *Config {
 // value, and description.
 func (c *Config) Add(name string) *Option {
 	c.options[name] = &Option{
-		name:   name,
-		envVar: "",
-		def:    "",
-		desc:   "",
+		name:    name,
+		envVar:  "",
+		def:     "",
+		desc:    "",
+		longOpt: name,
 	}
 	return c.options[name]
 }
@@ -81,7 +82,7 @@ func (c *Config) Parse() {
 		if o.shortOpt != "" {
 			cmdline = append(cmdline, "-" + o.shortOpt)
 		}
-		cmdline = append(cmdline, "--"+name)
+		cmdline = append(cmdline, "--"+o.longOpt)
 		c.flags[name] = GooptFigureString(cmdline, o.def, o.desc)
 		defcopy := o.def
 		c.values[name] = &defcopy
@@ -181,7 +182,7 @@ func (c *Config) ParseFile(passed map[string]bool) error {
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
-	name, envVar, shortOpt, def, desc string
+	name, envVar, shortOpt, def, desc, longOpt string
 	fileSpec				string              // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
 }
 
@@ -196,6 +197,11 @@ func (o *Option) FileSpec(spec string) *Option {
 
 func (o *Option) ShortOpt(opt string) *Option {
 	o.shortOpt = opt
+	return o
+}
+
+func (o *Option) LongOpt(opt string) *Option {
+	o.longOpt = opt
 	return o
 }
 

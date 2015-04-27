@@ -1,6 +1,7 @@
 package gofigure
 
 import (
+	"fmt"
 	"github.com/droundy/goopt"
 	"log"
 	"os"
@@ -23,10 +24,12 @@ func GooptFigureString(names []string, def string, help string) *string {
 // command line flags and environment variables.
 type Config struct {
 	Description			string
+	DescribeEnvironment bool	// if true, the environment variable is automatically added to the flag description
 	DisableCommandLine	bool
 	EnvPrefix			string
 	EnvOverridesFile	bool
 	FileParser			File
+	RequireFile			bool    // application will panic if RequireFile == true, FileParser != nil and file doesn't exist
 	Version				string
 	options				map[string]*Option
 	flags				map[string]*string
@@ -36,11 +39,13 @@ type Config struct {
 // Returns a new Config instance.
 func New() *Config {
 	return &Config{
-		DisableCommandLine:	false,
-		EnvOverridesFile:   false,
-		options:			make(map[string]*Option),
-		flags:				make(map[string]*string),
-		values:				make(map[string]*string),
+		DescribeEnvironment: false,
+		DisableCommandLine:	 false,
+		EnvOverridesFile:    false,
+		RequireFile:         true,
+		options:			 make(map[string]*Option),
+		flags:				 make(map[string]*string),
+		values:				 make(map[string]*string),
 	}
 }
 
@@ -49,16 +54,17 @@ func New() *Config {
 // value, and description.
 func (c *Config) Add(name string) *Option {
 	c.options[name] = &Option{
-		name:   name,
-		envVar: "",
-		def:    "",
-		desc:   "",
+		name:    name,
+		envVar:  "",
+		def:     "",
+		desc:    "",
+		longOpt: name,
 	}
 	return c.options[name]
 }
 
 // Returns a configuration option by flag name.
-func (c *Config) Get(name string) *string {
+func (c Config) Get(name string) *string {
 	return c.values[name]
 }
 
@@ -81,8 +87,12 @@ func (c *Config) Parse() {
 		if o.shortOpt != "" {
 			cmdline = append(cmdline, "-" + o.shortOpt)
 		}
-		cmdline = append(cmdline, "--"+name)
-		c.flags[name] = GooptFigureString(cmdline, o.def, o.desc)
+		cmdline = append(cmdline, "--"+o.longOpt)
+		desc := o.desc
+		if c.DescribeEnvironment && o.envVar != "" {
+			desc += fmt.Sprintf(" Environment variable: %s_%s.", c.EnvPrefix, o.envVar)
+		}
+		c.flags[name] = GooptFigureString(cmdline, o.def, desc)
 		defcopy := o.def
 		c.values[name] = &defcopy
 	}
@@ -104,13 +114,17 @@ func (c *Config) Parse() {
 	if (c.EnvOverridesFile) {
 		c.ParseEnv(passed)
 		err := c.ParseFile(passed)
-		if err != nil {
+		if err != nil && c.RequireFile {
 			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		} else if err != nil {
+			log.Printf("Could not parse file: %s", err.Error())
 		}
 	} else {
 		err := c.ParseFile(passed)
-		if err != nil {
+		if err != nil && c.RequireFile {
 			log.Panicf("File defined but could not be parsed: %s", err.Error())
+		} else if err != nil {
+			log.Printf("Could not parse file: %s", err.Error())
 		}
 		c.ParseEnv(passed)
 	}
@@ -181,7 +195,7 @@ func (c *Config) ParseFile(passed map[string]bool) error {
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
-	name, envVar, shortOpt, def, desc string
+	name, envVar, shortOpt, def, desc, longOpt string
 	fileSpec				string              // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
 }
 
@@ -196,6 +210,11 @@ func (o *Option) FileSpec(spec string) *Option {
 
 func (o *Option) ShortOpt(opt string) *Option {
 	o.shortOpt = opt
+	return o
+}
+
+func (o *Option) LongOpt(opt string) *Option {
+	o.longOpt = opt
 	return o
 }
 

@@ -90,7 +90,7 @@ func (c *Config) Parse() {
 		cmdline = append(cmdline, "--"+o.longOpt)
 		desc := o.desc
 		if c.DescribeEnvironment && o.envVar != "" {
-			desc += fmt.Sprintf(" Environment variable: %s_%s.", c.EnvPrefix, o.envVar)
+			desc += fmt.Sprintf(" Environment variable: %s%s.", c.EnvPrefix, o.envVar)
 		}
 		c.flags[name] = GooptFigureString(cmdline, o.def, desc)
 		defcopy := o.def

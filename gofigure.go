@@ -191,12 +191,21 @@ func (c *Config) ParseFile(passed map[string]bool) error {
 	return nil
 }
 
+// Returns all options.
+func (c *Config) GetOptions() map[string]*Option {
+	ret := make(map[string]*Option)
+	for name, val := range c.options {
+		ret[name] = val
+	}
+	return ret
+}
+
 // Option contains the details of a configuration options,
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
 	name, envVar, shortOpt, def, desc, longOpt string
-	fileSpec				string              // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
+	fileSpec                                   string // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
 }
 
 func (o Option) Name() string {

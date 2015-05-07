@@ -162,14 +162,14 @@ func (c Config) parseFileToMap(handler File) (ValueMap, error) {
 	ret := ValueMap{}
 	for _, opt := range c.options {
 		if val, ok := root.FindOption(opt); ok {
-			ret.Set(opt.Name(), val)
+			ret.Set(opt.GetName(), val)
 		}
 	}
 	return ret, nil
 }
 
 func (c *Config) ParseFile(passed map[string]bool) error {
-	if (c.FileParser == nil) {
+	if c.FileParser == nil {
 		return nil
 	}
 
@@ -208,8 +208,32 @@ type Option struct {
 	fileSpec                                   string // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
 }
 
-func (o Option) Name() string {
+func (o Option) GetName() string {
 	return o.name
+}
+
+func (o Option) GetFileSpec() string {
+	return o.fileSpec
+}
+
+func (o Option) GetShortOpt() string {
+	return o.shortOpt
+}
+
+func (o Option) GetLongOpt() string {
+	return o.longOpt
+}
+
+func (o Option) GetDefault() string {
+	return o.def
+}
+
+func (o Option) GetEnvVar() string {
+	return o.envVar
+}
+
+func (o Option) GetDescription() string {
+	return o.desc
 }
 
 func (o *Option) FileSpec(spec string) *Option {

@@ -5,6 +5,7 @@ import (
 	"github.com/droundy/goopt"
 	"log"
 	"os"
+	"strings"
 )
 
 // This function is a convenience function. It displays the default values for us but handles them
@@ -17,6 +18,17 @@ func GooptFigureString(names []string, def string, help string) *string {
 		return nil
 	}
 	goopt.ReqArg(names, def, help, f)
+	return s
+}
+
+func GooptFigureBool(names []string, help string) *bool {
+	s := new(bool)
+	*s = false
+	f := func () error {
+		*s = true
+		return nil
+	}
+	goopt.NoArg(names, help, f)
 	return s
 }
 
@@ -45,7 +57,7 @@ func New() *Config {
 		EnvOverridesFile:		false,
 		RequireFile:			true,
 		options:				make(map[string]*Option),
-		bools:					make(map[string]*bool)
+		bools:					make(map[string]*bool),
 		flags:					make(map[string]*string),
 		values:					make(map[string]*string),
 	}
@@ -106,7 +118,11 @@ func (c *Config) Parse() {
 		if c.DescribeEnvironment && o.envVar != "" {
 			desc += fmt.Sprintf(" Environment variable: %s%s.", c.EnvPrefix, o.envVar)
 		}
-		c.flags[name] = GooptFigureString(cmdline, o.def, desc)
+		if o.boolean {
+			c.bools[name] = GooptFigureBool(cmdline, desc)
+		} else {
+			c.flags[name] = GooptFigureString(cmdline, o.def, desc)
+		}
 		defcopy := o.def
 		c.values[name] = &defcopy
 	}
@@ -121,6 +137,15 @@ func (c *Config) Parse() {
 			if *f != "" {
 				passed[name] = true
 				*c.values[name] = *f
+			}
+		}
+
+		for name, f := range c.bools {
+			if *f {
+				passed[name] = true
+				*c.values[name] = "true"
+			} else {
+				*c.values[name] = "false"
 			}
 		}
 	}
@@ -158,9 +183,19 @@ func (c *Config) ParseEnv(passed map[string]bool) {
 		// check the corresponding environment variable.
 		envVar := c.EnvPrefix + f.envVar
 		if val := os.Getenv(envVar); val != "" {
-			*c.values[name] = val
+			if f.boolean {
+				boolval := "true"
+				if strings.ToLower(val) == "false" || strings.ToLower(val) == "no" || val == "0" || val == "" {
+					boolval = "false"
+				}
+				*c.values[name] = boolval
+			} else {
+				*c.values[name] = val
+			}
 			passed[name] = true
 		}
+
+
 	}
 }
 
@@ -193,8 +228,18 @@ func (c *Config) ParseFile(passed map[string]bool) error {
 			continue
 		}
 
-		if p, ok := c.values[k]; ok {
-			*p = v
+		if f, ok := c.options[k]; ok {
+			if f.boolean {
+				boolval := "true"
+				if strings.ToLower(v) == "false" || strings.ToLower(v) == "no" || v == "0" || v == "" {
+					boolval = "false"
+				}
+				*c.values[k] = boolval
+			} else {
+				if p, ok := c.values[k]; ok {
+					*p = v
+				}
+			}
 			passed[k] = true
 		}
 	}
@@ -269,6 +314,9 @@ func (o *Option) LongOpt(opt string) *Option {
 
 // Sets the configuration option's default value.
 func (o *Option) Default(def string) *Option {
+	if o.boolean {
+		panic("Cannot set default value for boolean flag.")
+	}
 	o.def = def
 	return o
 }

@@ -24,7 +24,7 @@ func GooptFigureString(names []string, def string, help string) *string {
 // command line flags and environment variables.
 type Config struct {
 	Description			string
-	DescribeEnvironment bool	// if true, the environment variable is automatically added to the flag description
+	DescribeEnvironment	bool	// if true, the environment variable is automatically added to the flag description
 	DisableCommandLine	bool
 	EnvPrefix			string
 	EnvOverridesFile	bool
@@ -32,6 +32,7 @@ type Config struct {
 	RequireFile			bool    // application will panic if RequireFile == true, FileParser != nil and file doesn't exist
 	Version				string
 	options				map[string]*Option
+	bools				map[string]*bool
 	flags				map[string]*string
 	values				map[string]*string
 }
@@ -39,13 +40,14 @@ type Config struct {
 // Returns a new Config instance.
 func New() *Config {
 	return &Config{
-		DescribeEnvironment: false,
-		DisableCommandLine:	 false,
-		EnvOverridesFile:    false,
-		RequireFile:         true,
-		options:			 make(map[string]*Option),
-		flags:				 make(map[string]*string),
-		values:				 make(map[string]*string),
+		DescribeEnvironment:	false,
+		DisableCommandLine:		false,
+		EnvOverridesFile:		false,
+		RequireFile:			true,
+		options:				make(map[string]*Option),
+		bools:					make(map[string]*bool)
+		flags:					make(map[string]*string),
+		values:					make(map[string]*string),
 	}
 }
 
@@ -59,6 +61,18 @@ func (c *Config) Add(name string) *Option {
 		def:     "",
 		desc:    "",
 		longOpt: name,
+	}
+	return c.options[name]
+}
+
+func (c *Config) AddBoolean(name string) *Option {
+	c.options[name] = &Option{
+		name:    name,
+		envVar:  "",
+		def:     "",
+		desc:    "",
+		longOpt: name,
+		boolean: true,
 	}
 	return c.options[name]
 }
@@ -116,15 +130,11 @@ func (c *Config) Parse() {
 		err := c.ParseFile(passed)
 		if err != nil && c.RequireFile {
 			log.Panicf("File defined but could not be parsed: %s", err.Error())
-		} else if err != nil {
-			log.Printf("Could not parse file: %s", err.Error())
 		}
 	} else {
 		err := c.ParseFile(passed)
 		if err != nil && c.RequireFile {
 			log.Panicf("File defined but could not be parsed: %s", err.Error())
-		} else if err != nil {
-			log.Printf("Could not parse file: %s", err.Error())
 		}
 		c.ParseEnv(passed)
 	}
@@ -204,8 +214,14 @@ func (c *Config) GetOptions() map[string]*Option {
 // e.g. corresponding environment variable, default value,
 // description.
 type Option struct {
-	name, envVar, shortOpt, def, desc, longOpt string
-	fileSpec                                   string // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
+	name					string
+	envVar					string
+	shortOpt				string
+	def						string
+	desc					string
+	longOpt					string
+	boolean					bool
+	fileSpec				string              // The file spec is of the form "(CATEGORY.)*NAME", eg. for 'foo' under the category 'bar', it would be foo.bar
 }
 
 func (o Option) GetName() string {
